@@ -47,22 +47,20 @@ export function AuthProvider({ children }) {
   }
 
   async function signUp({ email, password, firstName, lastName, phone }) {
-    const { data, error } = await supabase.auth.signUp({ email, password })
+    // Pass all profile fields as auth metadata so the DB trigger can
+    // create the profile row server-side (bypasses RLS — no session exists yet).
+    const { data, error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        data: {
+          first_name: firstName,
+          last_name: lastName,
+          phone: phone || null,
+        },
+      },
+    })
     if (error) throw error
-
-    // Insert profile row
-    if (data.user) {
-      const { error: profileError } = await supabase.from('profiles').upsert({
-        id: data.user.id,
-        email,
-        first_name: firstName,
-        last_name: lastName,
-        phone: phone || null,
-        role: 'customer',
-      })
-      if (profileError) throw profileError
-    }
-
     return data
   }
 

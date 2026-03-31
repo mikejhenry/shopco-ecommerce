@@ -119,9 +119,19 @@ create or replace trigger trg_orders_updated_at
 create or replace function handle_new_user()
 returns trigger as $$
 begin
-  insert into public.profiles (id, email)
-  values (new.id, new.email)
-  on conflict (id) do nothing;
+  insert into public.profiles (id, email, first_name, last_name, phone)
+  values (
+    new.id,
+    new.email,
+    coalesce(new.raw_user_meta_data->>'first_name', ''),
+    coalesce(new.raw_user_meta_data->>'last_name', ''),
+    new.raw_user_meta_data->>'phone'
+  )
+  on conflict (id) do update set
+    first_name = coalesce(excluded.first_name, profiles.first_name),
+    last_name  = coalesce(excluded.last_name,  profiles.last_name),
+    phone      = coalesce(excluded.phone,      profiles.phone),
+    updated_at = now();
   return new;
 end;
 $$ language plpgsql security definer;
