@@ -25,27 +25,30 @@ export default function Shop() {
 
   const fetchProducts = useCallback(async () => {
     setLoading(true)
-    let query = supabase
-      .from('products')
-      .select('*', { count: 'exact' })
-      .eq('is_active', true)
+    try {
+      let query = supabase
+        .from('products')
+        .select('*', { count: 'exact' })
+        .eq('is_active', true)
 
-    if (search.trim()) query = query.ilike('title', `%${search.trim()}%`)
-    if (category !== 'All') query = query.eq('category', category)
+      if (search.trim()) query = query.ilike('title', `%${search.trim()}%`)
+      if (category !== 'All') query = query.eq('category', category)
 
-    if (sort === 'newest') query = query.order('created_at', { ascending: false })
-    else if (sort === 'price_asc') query = query.order('price', { ascending: true })
-    else if (sort === 'price_desc') query = query.order('price', { ascending: false })
-    else if (sort === 'name_asc') query = query.order('title', { ascending: true })
+      if (sort === 'newest') query = query.order('created_at', { ascending: false })
+      else if (sort === 'price_asc') query = query.order('price', { ascending: true })
+      else if (sort === 'price_desc') query = query.order('price', { ascending: false })
+      else if (sort === 'name_asc') query = query.order('title', { ascending: true })
 
-    query = query.range(page * PAGE_SIZE, (page + 1) * PAGE_SIZE - 1)
+      query = query.range(page * PAGE_SIZE, (page + 1) * PAGE_SIZE - 1)
 
-    const { data, count, error } = await query
-    if (!error) {
-      setProducts(data ?? [])
-      setTotal(count ?? 0)
+      const { data, count, error } = await query
+      if (!error) {
+        setProducts(data ?? [])
+        setTotal(count ?? 0)
+      }
+    } finally {
+      setLoading(false)
     }
-    setLoading(false)
   }, [search, category, sort, page])
 
   useEffect(() => {

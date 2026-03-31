@@ -18,15 +18,18 @@ export default function Home() {
 
   useEffect(() => {
     async function load() {
-      const { data } = await supabase
-        .from('products')
-        .select('*')
-        .eq('is_active', true)
-        .gt('quantity', 0)
-        .order('created_at', { ascending: false })
-        .limit(8)
-      setFeatured(data ?? [])
-      setLoading(false)
+      try {
+        const { data } = await supabase
+          .from('products')
+          .select('*')
+          .eq('is_active', true)
+          .gt('quantity', 0)
+          .order('created_at', { ascending: false })
+          .limit(8)
+        setFeatured(data ?? [])
+      } finally {
+        setLoading(false)
+      }
     }
     load()
   }, [])
