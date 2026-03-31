@@ -29,6 +29,9 @@ Thumbs.db
 # Netlify
 .netlify/
 
+# Claude Code internal
+.claude/
+
 # Logs
 *.log
 npm-debug.log*
