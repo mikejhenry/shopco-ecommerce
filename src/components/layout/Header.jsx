@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { Link, NavLink, useNavigate } from 'react-router-dom'
 import { ShoppingCart, User, Menu, X, Package, LogOut, LayoutDashboard, MessageSquare, ChevronDown } from 'lucide-react'
 import { useAuth } from '../../context/AuthContext'
@@ -12,8 +12,22 @@ export default function Header() {
   const navigate = useNavigate()
   const [mobileOpen, setMobileOpen] = useState(false)
   const [userMenuOpen, setUserMenuOpen] = useState(false)
+  const menuRef = useRef(null)
+
+  // Close dropdown when clicking outside — avoids z-index/stacking-context issues
+  useEffect(() => {
+    if (!userMenuOpen) return
+    function handleClickOutside(e) {
+      if (menuRef.current && !menuRef.current.contains(e.target)) {
+        setUserMenuOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [userMenuOpen])
 
   async function handleSignOut() {
+    setUserMenuOpen(false)
     try {
       await signOut()
       navigate('/')
@@ -60,7 +74,7 @@ export default function Header() {
             </Link>
 
             {isAuthenticated ? (
-              <div className="relative hidden md:block">
+              <div className="relative hidden md:block" ref={menuRef}>
                 <button
                   onClick={() => setUserMenuOpen((v) => !v)}
                   className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg hover:bg-gray-100 transition-colors text-sm font-medium text-slate-700"
@@ -75,53 +89,50 @@ export default function Header() {
                 </button>
 
                 {userMenuOpen && (
-                  <>
-                    <div className="fixed inset-0 z-10" onClick={() => setUserMenuOpen(false)} />
-                    <div className="absolute right-0 mt-1 w-52 bg-white rounded-xl shadow-lg border border-gray-100 py-1 z-20">
-                      {isVendor && (
-                        <Link
-                          to="/vendor"
-                          onClick={() => setUserMenuOpen(false)}
-                          className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-slate-700 hover:bg-gray-50"
-                        >
-                          <LayoutDashboard size={15} />
-                          Vendor Dashboard
-                        </Link>
-                      )}
+                  <div className="absolute right-0 mt-1 w-52 bg-white rounded-xl shadow-lg border border-gray-100 py-1 z-50">
+                    {isVendor && (
                       <Link
-                        to="/profile"
+                        to="/vendor"
                         onClick={() => setUserMenuOpen(false)}
                         className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-slate-700 hover:bg-gray-50"
                       >
-                        <User size={15} />
-                        My Profile
+                        <LayoutDashboard size={15} />
+                        Vendor Dashboard
                       </Link>
-                      <Link
-                        to="/my-orders"
-                        onClick={() => setUserMenuOpen(false)}
-                        className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-slate-700 hover:bg-gray-50"
-                      >
-                        <Package size={15} />
-                        My Orders
-                      </Link>
-                      <Link
-                        to="/messages"
-                        onClick={() => setUserMenuOpen(false)}
-                        className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-slate-700 hover:bg-gray-50"
-                      >
-                        <MessageSquare size={15} />
-                        Messages
-                      </Link>
-                      <hr className="my-1 border-gray-100" />
-                      <button
-                        onClick={() => { setUserMenuOpen(false); handleSignOut() }}
-                        className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-red-600 hover:bg-gray-50 w-full text-left"
-                      >
-                        <LogOut size={15} />
-                        Sign Out
-                      </button>
-                    </div>
-                  </>
+                    )}
+                    <Link
+                      to="/profile"
+                      onClick={() => setUserMenuOpen(false)}
+                      className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-slate-700 hover:bg-gray-50"
+                    >
+                      <User size={15} />
+                      My Profile
+                    </Link>
+                    <Link
+                      to="/my-orders"
+                      onClick={() => setUserMenuOpen(false)}
+                      className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-slate-700 hover:bg-gray-50"
+                    >
+                      <Package size={15} />
+                      My Orders
+                    </Link>
+                    <Link
+                      to="/messages"
+                      onClick={() => setUserMenuOpen(false)}
+                      className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-slate-700 hover:bg-gray-50"
+                    >
+                      <MessageSquare size={15} />
+                      Messages
+                    </Link>
+                    <hr className="my-1 border-gray-100" />
+                    <button
+                      onClick={handleSignOut}
+                      className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-red-600 hover:bg-gray-50 w-full text-left"
+                    >
+                      <LogOut size={15} />
+                      Sign Out
+                    </button>
+                  </div>
                 )}
               </div>
             ) : (
