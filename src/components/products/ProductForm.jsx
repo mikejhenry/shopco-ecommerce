@@ -100,18 +100,29 @@ export default function ProductForm({ product, onSuccess, onCancel }) {
         updated_at: new Date().toISOString(),
       }
 
-      let error
-      if (isEditing) {
-        ;({ error } = await supabase.from('products').update(payload).eq('id', product.id))
-      } else {
-        ;({ error } = await supabase.from('products').insert(payload))
+      // Wrap in a 15-second timeout so the form never hangs indefinitely
+      const timeout = new Promise((_, reject) =>
+        setTimeout(() => reject(new Error('Request timed out. Check your connection and that your account has vendor permissions.')), 15000)
+      )
+
+      const dbOperation = isEditing
+        ? supabase.from('products').update(payload).eq('id', product.id)
+        : supabase.from('products').insert(payload)
+
+      const { error } = await Promise.race([dbOperation, timeout])
+
+      if (error) {
+        // Surface RLS violations with a clear message
+        if (error.code === '42501' || error.message?.includes('row-level security')) {
+          throw new Error('Permission denied. Make sure your account role is set to vendor in Supabase.')
+        }
+        throw error
       }
 
-      if (error) throw error
       toast.success(isEditing ? 'Product updated' : 'Product created')
       onSuccess?.()
     } catch (err) {
-      toast.error(err.message)
+      toast.error(err.message ?? 'Something went wrong. Please try again.')
     } finally {
       setLoading(false)
     }
